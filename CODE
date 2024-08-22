@@ -1,0 +1,217 @@
+#include <iostream>
+#include <conio.h> // For _kbhit() and _getch() on Windows
+#include <windows.h> // For Sleep() on Windows
+#include <cstdlib> // For rand() and srand()
+#include <ctime> // For time()
+
+using namespace std;
+
+// Dimensions of the boundary
+const int width = 80;
+const int height = 20;
+
+// Snake head coordinates (x-axis, y-axis)
+int x, y;
+// Food coordinates
+int foodX, foodY;
+// Player's score
+int score;
+// Snake's tail (x-axis, y-axis)
+int tailX[100], tailY[100];
+// Length of the snake's tail
+int tailLength;
+// Enum to store snake's direction
+enum Direction { STOP = 0, LEFT, RIGHT, UP, DOWN };
+// Direction variable
+Direction dir;
+// Game over flag
+bool gameOver;
+
+// Function to display the title banner
+void DisplayTitle() {
+    cout << "\n   ### Welcome to the Personalized Snake Game! ###" << endl;
+    cout << "        -- A custom snake adventure by YOU! --\n" << endl;
+}
+
+// Function to initialize the game
+void InitGame() {
+    gameOver = false;
+    dir = STOP;
+    x = width / 2;
+    y = height / 2;
+    foodX = rand() % width;
+    foodY = rand() % height;
+    score = 0;
+    tailLength = 0;
+}
+
+// Function to render the game board
+void RenderGame(string playerName) {
+    system("cls"); // Clears the console on Windows
+
+    // Display the top border
+    for (int i = 0; i < width + 2; i++)
+        cout << "~";
+    cout << endl;
+
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j <= width; j++) {
+            // Display side walls
+            if (j == 0 || j == width)
+                cout << "|";
+            // Display snake head
+            else if (i == y && j == x)
+                cout << "@"; // Custom snake head
+            // Display food
+            else if (i == foodY && j == foodX)
+                cout << "*"; // Custom food
+            else {
+                bool printTail = false;
+                // Display snake tail
+                for (int k = 0; k < tailLength; k++) {
+                    if (tailX[k] == j && tailY[k] == i) {
+                        cout << "o"; // Custom snake tail
+                        printTail = true;
+                    }
+                }
+                if (!printTail)
+                    cout << " ";
+            }
+        }
+        cout << endl;
+    }
+
+    // Display the bottom border
+    for (int i = 0; i < width + 2; i++)
+        cout << "~";
+    cout << endl;
+
+    // Display player's score
+    cout << "\n" << playerName << "'s Adventure Score: " << score << endl;
+}
+
+// Function to update the game logic
+void UpdateGame() {
+    int prevX = tailX[0];
+    int prevY = tailY[0];
+    int prev2X, prev2Y;
+    tailX[0] = x;
+    tailY[0] = y;
+
+    for (int i = 1; i < tailLength; i++) {
+        prev2X = tailX[i];
+        prev2Y = tailY[i];
+        tailX[i] = prevX;
+        tailY[i] = prevY;
+        prevX = prev2X;
+        prevY = prev2Y;
+    }
+
+    switch (dir) {
+    case LEFT:
+        x--;
+        break;
+    case RIGHT:
+        x++;
+        break;
+    case UP:
+        y--;
+        break;
+    case DOWN:
+        y++;
+        break;
+    default:
+        break;
+    }
+
+    // Check for wall collisions
+    if (x >= width || x < 0 || y >= height || y < 0)
+        gameOver = true;
+
+    // Check for tail collisions
+    for (int i = 0; i < tailLength; i++) {
+        if (tailX[i] == x && tailY[i] == y)
+            gameOver = true;
+    }
+
+    // Check if the snake eats the food
+    if (x == foodX && y == foodY) {
+        score += 10;
+        foodX = rand() % width;
+        foodY = rand() % height;
+        tailLength++;
+    }
+}
+
+// Function to handle user input
+void ProcessInput() {
+    if (_kbhit()) {
+        switch (_getch()) {
+        case 'a':
+            if (dir != RIGHT) dir = LEFT;
+            break;
+        case 'd':
+            if (dir != LEFT) dir = RIGHT;
+            break;
+        case 'w':
+            if (dir != DOWN) dir = UP;
+            break;
+        case 's':
+            if (dir != UP) dir = DOWN;
+            break;
+        case 'x':
+            gameOver = true;
+            break;
+        }
+    }
+}
+
+// Function to set difficulty level
+int ChooseDifficulty() {
+    int difficulty;
+    char choice;
+    cout << "\nChoose your adventure's pace:\n1: Chill Mode\n2: Balanced Journey\n3: Hardcore Quest\n"
+         << "Press any other key for a Balanced Journey.\nSelect difficulty: ";
+    cin >> choice;
+
+    switch (choice) {
+    case '1':
+        difficulty = 150;
+        break;
+    case '2':
+        difficulty = 100;
+        break;
+    case '3':
+        difficulty = 50;
+        break;
+    default:
+        difficulty = 100;
+    }
+
+    return difficulty;
+}
+
+// Main game loop
+int main() {
+    srand(time(0)); // Seed for random number generation
+
+    DisplayTitle();
+
+    string playerName;
+    cout << "Enter your hero's name: ";
+    cin >> playerName;
+
+    int difficulty = ChooseDifficulty();
+
+    InitGame();
+    while (!gameOver) {
+        RenderGame(playerName);
+        ProcessInput();
+        UpdateGame();
+        Sleep(difficulty); // Delay based on difficulty
+    }
+
+    cout << "\n*** GAME OVER! ***" << endl;
+    cout << playerName << ", you scored " << score << " points. Thanks for playing!\n";
+    return 0;
+}
